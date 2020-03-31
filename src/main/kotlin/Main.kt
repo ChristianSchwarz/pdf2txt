@@ -40,7 +40,8 @@ fun main() {
 private fun doOCR(pageImage: BufferedImage): String {
 
     val t = Tesseract()
-    t.setDatapath(File("""C:\Program Files\Tesseract-OCR\tessdata""").absolutePath)
+
+    t.setDatapath(File("""D:\git-p\pdf2txt\src\main\kotlin\""").absolutePath)
     t.setLanguage("rus")
     //t.setHocr(true)
     t.setPageSegMode(ITessAPI.TessPageSegMode.PSM_AUTO)
