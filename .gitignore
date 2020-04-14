@@ -21,3 +21,8 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+/.gradle/
+/build/
+/out/
+/src/main/kotlin/11437.pdf.img/
+/src/main/kotlin/Su-33korab.pdf.img/
