@@ -24,5 +24,4 @@ hs_err_pid*
 /.gradle/
 /build/
 /out/
-/src/main/kotlin/11437.pdf.img/
-/src/main/kotlin/Su-33korab.pdf.img/
+/data/11437.pdf.img/

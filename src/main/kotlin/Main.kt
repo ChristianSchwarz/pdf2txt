@@ -1,7 +1,4 @@
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import net.sourceforge.tess4j.ITessAPI
 import net.sourceforge.tess4j.Tesseract
 import net.sourceforge.tess4j.util.LoggHelper
@@ -13,28 +10,26 @@ import java.awt.image.BufferedImage
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.ConcurrentSkipListMap
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit.MINUTES
 import javax.imageio.ImageIO
 
 private val logger = LoggerFactory.getLogger(LoggHelper().toString())
 
-fun main() = runBlocking{
-    val executor = Executors.newFixedThreadPool(8)
+const val INPUT_PDF = """.\data\11437.pdf"""
+
+fun main() = runBlocking {
+    print(File(".").absolutePath)
 
     val deferred = ArrayList<Deferred<Any>>()
     val pages = ConcurrentSkipListMap<Int, String>()
 
     loadPages { pageImage, pageIndex ->
-        deferred+=GlobalScope.async {
+        deferred += GlobalScope.async {
             pages[pageIndex] = doOCR(pageImage)
             println("     ocr $pageIndex")
         }
     }
 
     deferred.forEach { it.await() }
-    executor.shutdown()
-    executor.awaitTermination(10, MINUTES)
 
 
     pages.forEach { (page: Int, text: String) ->
@@ -50,7 +45,7 @@ private fun doOCR(pageImage: BufferedImage): String {
 
     val t = Tesseract()
 
-    t.setDatapath(File("""c:\git-p\pdf2txt\src\main\kotlin\""").absolutePath)
+    t.setDatapath(File(".").normalize().absolutePath)
     t.setLanguage("rus")
     //t.setHocr(true)
     t.setPageSegMode(ITessAPI.TessPageSegMode.PSM_AUTO)
@@ -64,8 +59,8 @@ private fun doOCR(pageImage: BufferedImage): String {
 
 private suspend fun loadPages(onPageImageLoaded: PageImageLoaded) {
 
-    val input = """c:\git-p\pdf2txt\src\main\kotlin\11437.pdf"""
-    val cacheFolder = File("""$input.img\""")
+
+    val cacheFolder = File("""$INPUT_PDF.img\""")
     if (cacheFolder.isDirectory) {
         loadCachedPages(cacheFolder, onPageImageLoaded)
         return
@@ -73,7 +68,7 @@ private suspend fun loadPages(onPageImageLoaded: PageImageLoaded) {
 
     cacheFolder.mkdirs()
 
-    convertPdfToBufferedImages(File(input)) { img, index ->
+    convertPdfToBufferedImages(File(INPUT_PDF)) { img, index ->
         onPageImageLoaded(img, index)
         val file = File(cacheFolder, "$index.png")
         ImageIO.write(img, "png", file)
@@ -105,30 +100,37 @@ private fun loadCachedPages(cacheFolder: File, onPageImageLoaded: PageImageLoade
 }
 
 
-@Throws(IOException::class)
 suspend fun convertPdfToBufferedImages(
     inputPdfFile: File,
     onImageExtracted: PageImageLoaded
 ) {
 
-    val deferred = ArrayList<Deferred<Any>>()
-    PDDocument.load(inputPdfFile).use { document ->
-        val pdfRenderer = PDFRenderer(document)
 
-        for (pageIndex in 0 until document.numberOfPages) {
-            deferred+=GlobalScope.async {
-                try {
-                    val pageImage = pdfRenderer.renderImageWithDPI(pageIndex, 300f, ImageType.GRAY)
-
-                    onImageExtracted(pageImage, pageIndex)
-                } catch (e: IOException) {
-                    logger.error("Error extracting PDF Document pageIndex $pageIndex=> $e", e)
+    runCatching { PDDocument.load(inputPdfFile) }
+        .onSuccess { pdDocument ->
+            pdDocument.use { document ->
+                val pdfRenderer = PDFRenderer(document)
+                val deferred = ArrayList<Deferred<Any>>()
+                for (pageIndex in 0 until document.numberOfPages) {
+                    deferred += extractImage(pdfRenderer, pageIndex, onImageExtracted)
                 }
+                awaitAll(*deferred.toTypedArray())
             }
         }
-        deferred.forEach { it.await() }
-    }
+        .onFailure { e -> logger.error("Error loading:$inputPdfFile", e) }
 
+}
+
+private suspend fun extractImage(
+    pdfRenderer: PDFRenderer,
+    pageIndex: Int,
+    onImageExtracted: PageImageLoaded
+): Deferred<Any> = withContext(Dispatchers.IO) {
+    async {
+        runCatching { pdfRenderer.renderImageWithDPI(pageIndex, 300f, ImageType.GRAY) }
+            .onSuccess { pageImage -> onImageExtracted(pageImage, pageIndex) }
+            .onFailure { e -> logger.error("Error extracting PDF Document pageIndex $pageIndex", e) }
+    }
 }
 
 typealias PageImageLoaded = (BufferedImage, pageIndex: Int) -> Unit
