@@ -154,9 +154,13 @@ private suspend fun convertDjvuToBufferedImages(inputFile: Path, onImageExtracte
     val document = Document()
     document.isAsync = true
 
-    document.read(inputFile.toUri().toURL())
+    runCatching { document.read(inputFile.toUri().toURL()) }
+        .onFailure {
+            logger.error("failed to read djvu file", it)
+            return@convertDjvuToBufferedImages
+        }
 
-val deferreds = ArrayList<Deferred<Unit>>()
+    val deferreds = ArrayList<Deferred<Unit>>()
     for (pageNumber in 0 until document.size()) {
         deferreds += djvuPageToImage(document, pageNumber, onImageExtracted)
     }
@@ -168,7 +172,7 @@ private fun djvuPageToImage(
     document: Document,
     pageIndex: Int,
     onImageExtracted: PageImageLoaded
-):Deferred<Unit> =
+): Deferred<Unit> =
     GlobalScope.async {
 
         runCatching { document.getPage(pageIndex, MAX_PRIORITY, true) }
@@ -201,7 +205,7 @@ suspend fun convertPdfToBufferedImages(
                 val pdfRenderer = PDFRenderer(document)
                 val deferreds = ArrayList<Deferred<Unit>>()
                 for (pageIndex in 0 until document.numberOfPages) {
-                    deferreds+=pdfPageToImage(pdfRenderer, pageIndex, onImageExtracted)
+                    deferreds += pdfPageToImage(pdfRenderer, pageIndex, onImageExtracted)
                 }
                 deferreds.awaitAll()
 
@@ -215,7 +219,7 @@ private fun pdfPageToImage(
     pdfRenderer: PDFRenderer,
     pageIndex: Int,
     onImageExtracted: PageImageLoaded
-):Deferred<Unit> = GlobalScope.async {
+): Deferred<Unit> = GlobalScope.async {
     runCatching { pdfRenderer.renderImageWithDPI(pageIndex, 120f, ImageType.GRAY) }
         .onSuccess { pageImage -> onImageExtracted(pageImage, pageIndex) }
         .onFailure { e -> logger.error("Error extracting PDF Document pageIndex $pageIndex", e) }
