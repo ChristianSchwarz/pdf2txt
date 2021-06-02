@@ -16,17 +16,13 @@ repositories {
     flatDir {
         dirs 'libs'
     }
-
 }
 
-
-
 dependencies {
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.4.2'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.5.0'
     implementation "net.sourceforge.tess4j:tess4j:4.5.4"
     implementation "com.github.jai-imageio:jai-imageio-core:1.4.0"
     implementation "com.github.jai-imageio:jai-imageio-jpeg2000:1.4.0"
-    implementation group: 'com.aspose', name: 'aspose-imaging', version: '21.5', classifier: 'jdk16'
     implementation name: "javadjvu"
 }
 
