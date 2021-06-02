@@ -1,5 +1,5 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.4.32'
+    id 'org.jetbrains.kotlin.jvm' version '1.5.0'
 }
 
 group 'pdfocr'
@@ -7,7 +7,9 @@ version '1.0-SNAPSHOT'
 apply plugin: 'kotlin'
 repositories {
     mavenCentral()
-    jcenter()
+    maven{
+        url "https://jcenter.bintray.com/"
+    }
     maven{
         url "https://repository.aspose.com/repo/"
     }
@@ -22,16 +24,15 @@ repositories {
 dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.4.2'
     implementation "net.sourceforge.tess4j:tess4j:4.5.4"
-    runtime "com.github.jai-imageio:jai-imageio-core:1.3.1"
-    runtime "com.github.jai-imageio:jai-imageio-jpeg2000:1.3.0"
-    implementation "com.google.guava:guava:24.1.1-jre"
+    implementation "com.github.jai-imageio:jai-imageio-core:1.4.0"
+    implementation "com.github.jai-imageio:jai-imageio-jpeg2000:1.4.0"
     implementation group: 'com.aspose', name: 'aspose-imaging', version: '21.5', classifier: 'jdk16'
     implementation name: "javadjvu"
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = "15"
+    kotlinOptions.jvmTarget = "16"
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = "15"
+    kotlinOptions.jvmTarget = "16"
 }
