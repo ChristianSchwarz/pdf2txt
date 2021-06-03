@@ -1,3 +1,5 @@
+import converter.DjvuConverter
+import converter.PdfConverter
 import kotlinx.coroutines.*
 import net.sourceforge.tess4j.ITessAPI
 import net.sourceforge.tess4j.Tesseract
@@ -20,7 +22,6 @@ import kotlin.io.path.name
 
 
 val logger: Logger = LoggerFactory.getLogger(LoggHelper().toString())
-
 //const val INPUT_FILE = """.\data\11437.pdf"""
 const val INPUT_FILE = """.\data\Бабич - Наши авианосцы на стапелях и в дальних походах - 2003.djvu"""
 
@@ -64,7 +65,7 @@ private fun doOCR(pageImage: BufferedImage): String {
     t.setLanguage("rus")
     t.setOcrEngineMode(ITessAPI.TessOcrEngineMode.OEM_LSTM_ONLY)
     t.setPageSegMode(ITessAPI.TessPageSegMode.PSM_AUTO)
-   
+
     var text = t.doOCR(pageImage)
     text = text.replace("-\n", "")
 
