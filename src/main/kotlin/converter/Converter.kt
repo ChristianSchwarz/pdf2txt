@@ -16,12 +16,14 @@ abstract class AbstractConverter<PAGE_PROVIDER> : Converter {
 
     final override suspend fun toBufferedImages(inputFile: Path, onImageExtracted: PageImageLoaded) {
 
-        runCatching {
-            prepareDocument(inputFile)
-        }.onSuccess { (pageProvider, numberOfPages, finally) ->
-            loadPages(pageProvider, numberOfPages, onImageExtracted, inputFile)
-            finally()
-        }.onFailure { e -> logger.error("Error loading:$inputFile", e) }
+        runCatching { prepareDocument(inputFile) }
+            .onSuccess { (pageProvider, numberOfPages, finally) ->
+                loadPages(pageProvider, numberOfPages, onImageExtracted, inputFile)
+                finally()
+            }
+            .onFailure { e ->
+                logger.error("Error loading:$inputFile", e)
+            }
     }
 
     private suspend fun loadPages(
@@ -44,11 +46,13 @@ abstract class AbstractConverter<PAGE_PROVIDER> : Converter {
     }
 
 
-    abstract fun prepareDocument(inputFile: Path): Triple<PAGE_PROVIDER, Int, () -> Unit>
+    /**
+     * @return Triple containing
+     *  * PAGE_PROVIDER,
+     *  * number of pages,
+     *  * callback that will be called in order to close/dispose resources after all pages are loaded or an error occures, like in a 'finally' block
+     */
+    protected abstract fun prepareDocument(inputFile: Path): Triple<PAGE_PROVIDER, Int, () -> Unit>
 
-    abstract fun pageToImage(
-        provider: PAGE_PROVIDER,
-        pageIndex: Int
-
-    ): BufferedImage
+    protected abstract fun pageToImage(provider: PAGE_PROVIDER, pageIndex: Int): BufferedImage
 }

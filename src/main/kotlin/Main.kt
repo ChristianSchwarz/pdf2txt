@@ -15,13 +15,13 @@ import javax.imageio.IIOImage
 import javax.imageio.ImageIO
 import javax.imageio.ImageTypeSpecifier
 import javax.imageio.ImageWriteParam
-import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.Path
 import kotlin.io.path.extension
 import kotlin.io.path.name
 
 
 val logger: Logger = LoggerFactory.getLogger(LoggHelper().toString())
+
 //const val INPUT_FILE = """.\data\11437.pdf"""
 const val INPUT_FILE = """.\data\Бабич - Наши авианосцы на стапелях и в дальних походах - 2003.djvu"""
 
@@ -31,15 +31,16 @@ fun main() = runBlocking {
     val deferred = ArrayList<Deferred<Any>>()
     val pages = ConcurrentSkipListMap<Int, String>()
 
-    loadPages { pageImage, pageIndex ->
-        deferred += GlobalScope.async {
-            pages[pageIndex] = doOCR(pageImage)
-            println("     ocr $pageIndex")
+    coroutineScope {
+        loadPages { pageImage, pageIndex ->
+             launch {
+                pages[pageIndex] = doOCR(pageImage)
+                println("     ocr $pageIndex")
+            }
         }
     }
 
     deferred.awaitAll()
-
 
     FileWriter("$INPUT_FILE.txt").use {
         pages.forEach { (page: Int, text: String) ->
@@ -53,28 +54,22 @@ fun main() = runBlocking {
             it.append(message)
         }
     }
-
-
 }
 
 private fun doOCR(pageImage: BufferedImage): String {
-
     val t = Tesseract()
 
     t.setDatapath(File(".").normalize().absolutePath)
     t.setLanguage("rus")
     t.setOcrEngineMode(ITessAPI.TessOcrEngineMode.OEM_LSTM_ONLY)
     t.setPageSegMode(ITessAPI.TessPageSegMode.PSM_AUTO)
-
+    t.setHocr(true)
     var text = t.doOCR(pageImage)
     text = text.replace("-\n", "")
 
-
     return text
-
 }
 
-@OptIn(ExperimentalPathApi::class, ExperimentalStdlibApi::class)
 private suspend fun loadPages(onPageImageLoaded: PageImageLoaded) {
 
 

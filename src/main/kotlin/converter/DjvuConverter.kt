@@ -35,6 +35,5 @@ object DjvuConverter : AbstractConverter<Document>() {
         g.dispose()
 
         return bufferedImage
-
     }
 }
