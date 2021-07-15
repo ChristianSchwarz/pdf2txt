@@ -50,7 +50,7 @@ abstract class AbstractConverter<PAGE_PROVIDER> : Converter {
      * @return Triple containing
      *  * PAGE_PROVIDER,
      *  * number of pages,
-     *  * callback that will be called in order to close/dispose resources after all pages are loaded or an error occures, like in a 'finally' block
+     *  * callback that will be called in order to close/dispose resources after all pages are loaded or an error occurred, like in a 'finally' block
      */
     protected abstract fun prepareDocument(inputFile: Path): Triple<PAGE_PROVIDER, Int, () -> Unit>
 
